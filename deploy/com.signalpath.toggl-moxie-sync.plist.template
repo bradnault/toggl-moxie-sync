@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- __REPO_DIR__ is replaced by install-launchd.sh. Runs every 3 hours. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.signalpath.toggl-moxie-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__REPO_DIR__/deploy/run.sh</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>10800</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>WorkingDirectory</key>
+  <string>__REPO_DIR__</string>
+  <key>StandardOutPath</key>
+  <string>__REPO_DIR__/logs/toggl-moxie-sync.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__REPO_DIR__/logs/toggl-moxie-sync.err.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin</string>
+  </dict>
+</dict>
+</plist>

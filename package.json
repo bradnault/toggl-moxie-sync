@@ -1,0 +1,9 @@
+{
+  "name": "toggl-moxie-sync",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reliable Toggl Track -> Moxie time-entry sync (replaces Zapier). Built for Signal Path Creative.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": { "sync": "node sync.js" }
+}
