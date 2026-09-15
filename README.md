@@ -11,11 +11,9 @@ Every 3 hours: pull recent Toggl entries → for each completed entry, create a
 Moxie time entry with the same client, project, note (your Toggl "Details"),
 and start/end. Deduped by Toggl entry ID so nothing double-posts.
 
-- **Billable is Moxie's call, not ours.** Moxie's create endpoint has no billable
-  field; Moxie sets it from the client's project (hourly = billable, retainer /
-  Signal Path = non-billable). Your Care Plan 0.5h inclusion and invoicing are
-  untouched. WORK time under Signal Path still syncs (non-billable) so Moxie's
-  Time dashboard keeps showing total tracked.
+- **Billable rule (see below).** Every entry syncs as billable except time under
+  the `WORK time` project, which syncs non-billable. WORK time still syncs so
+  Moxie's Time dashboard keeps showing total tracked.
 - **Names must match.** The Toggl client/project name has to match a Moxie
   client/project name (Moxie matches exactly). Anything that doesn't map is
   logged and skipped — never guessed — so you can fix the name and it syncs next
@@ -44,6 +42,32 @@ node sync.js
 3. Set `SYNC_DRY_RUN=0`.
 4. `node sync.js` once to confirm live entries land correctly.
 5. `./deploy/install-launchd.sh` to run it every 3 hours automatically.
+
+## Billable
+
+Every synced entry is marked **billable except time under the `WORK time` project**
+(internal Signal Path time), which is non-billable. "Billable" only means it's available
+to invoice — you still choose what actually goes on each client invoice in Moxie. Your
+Care Plan 0.5h inclusion and overage math are unaffected.
+
+## An entry needs a client to sync
+
+The sync places time by matching your Toggl **client + project** to a Moxie
+client/project. An entry with no Toggl project (e.g. a quick call logged with only a
+note) has no client to match, so it's skipped and logged — never guessed. If you want
+that time billed, assign it the client's project in Toggl and it syncs on the next run.
+
+## Monitoring & troubleshooting
+
+- **Logs:** `logs/toggl-moxie-sync.out.log` / `.err.log`. Each run prints created /
+  already-synced / unmapped counts.
+- **Run on demand:** `launchctl kickstart -k gui/$(id -u)/com.signalpath.toggl-moxie-sync`
+- **`[FAIL]` lines** mean Moxie rejected a create — almost always a Toggl client/project
+  name that doesn't exactly match Moxie's. Fix the name; the entry isn't marked synced,
+  so it retries next run.
+- **No duplicates:** guarded by `data/synced-ids.json` (Toggl entry IDs) plus
+  `SYNC_ONLY_AFTER`.
+- **Pause the job:** `launchctl unload ~/Library/LaunchAgents/com.signalpath.toggl-moxie-sync.plist`
 
 ## Env
 

@@ -6,11 +6,10 @@
 // same pattern as site-sentry / pm-notify.
 //
 // Design notes:
-// - Moxie infers billable from the client's project setup (hourly = billable,
-//   retainer/Signal Path = non-billable), so this sync NEVER sets billable. It
-//   just mirrors entries; Moxie's fee schedule + your Care Plan 0.5h inclusion
-//   handle all billing. WORK time under Signal Path syncs too (non-billable),
-//   so Moxie's Time dashboard still shows total tracked.
+// - Billable rule: every entry syncs as billable EXCEPT the internal "WORK time"
+//   project, which syncs non-billable. "Billable" just means available to
+//   invoice; Brad decides what actually goes on each invoice in Moxie. WORK time
+//   still syncs (non-billable) so Moxie's Time dashboard shows total tracked.
 // - Names are passed through: the Toggl client/project name must match a Moxie
 //   client/project name (Moxie requires exact match). Mismatches are logged, not
 //   guessed. Fix the name on either side and it'll sync next run.
@@ -107,6 +106,11 @@ async function main() {
       mismatched++; continue;
     }
 
+    // Rule: everything billable EXCEPT the internal "WORK time" project.
+    // "Billable" just means available to invoice; Brad decides what to actually
+    // bill when building invoices in Moxie.
+    const billable = (projectName || '').trim().toLowerCase() !== 'work time';
+    const tag = billable ? 'billable' : 'non-billable';
     const body = {
       timerStart: e.start,
       timerEnd: e.stop,
@@ -114,10 +118,11 @@ async function main() {
       projectName,
       notes: e.description || '',
       userEmail: MOXIE_USER_EMAIL,
+      billable,
     };
 
     if (DRY_RUN) {
-      console.log(`[dry] would create: ${clientName} / ${projectName} | ${(e.duration / 3600).toFixed(2)}h | "${e.description || ''}"`);
+      console.log(`[dry] would create: ${clientName} / ${projectName} | ${(e.duration / 3600).toFixed(2)}h | ${tag} | "${e.description || ''}"`);
       skipped++;
       continue;
     }
@@ -125,7 +130,7 @@ async function main() {
       await moxieCreateTimeEntry(body);
       seen.add(id);
       created++;
-      console.log(`[sent] ${clientName} / ${projectName} | ${(e.duration / 3600).toFixed(2)}h | "${e.description || ''}"`);
+      console.log(`[sent] ${clientName} / ${projectName} | ${(e.duration / 3600).toFixed(2)}h | ${tag} | "${e.description || ''}"`);
     } catch (err) {
       console.error(`[FAIL] ${id}: ${err.message}`); // leave unseen -> retries next run
     }
